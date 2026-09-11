@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Taxas</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: radial-gradient(circle at 20% 20%, #0f1a14 0%, #050807 60%, #000000 100%);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .card {
+            background: rgba(20, 30, 25, 0.55);
+            backdrop-filter: blur(18px) saturate(140%);
+            -webkit-backdrop-filter: blur(18px) saturate(140%);
+            border: 1px solid rgba(0, 255, 140, 0.25);
+            padding: 25px;
+            border-radius: 18px;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.6),
+                0 0 40px rgba(0, 255, 140, 0.08),
+                inset 0 1px 1px rgba(255, 255, 255, 0.05);
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 15px;
+        }
+
+        .card-topo {
+            position: sticky;
+            top: 15px;
+            z-index: 1000;
+        }
+
+        h2 {
+            text-align: center;
+            color: #e8fff2;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-shadow: 0 0 12px rgba(0, 255, 140, 0.35);
+        }
+
+        .soma-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 255, 140, 0.07);
+            border: 1px dashed rgba(0, 255, 140, 0.35);
+            border-radius: 10px;
+            padding: 10px 14px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #cdf7e2;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s ease;
+        }
+
+        .soma-box:hover {
+            background: rgba(0, 255, 140, 0.12);
+        }
+
+        .soma-box .soma-valor {
+            font-weight: bold;
+            font-size: 17px;
+            color: #00ff8c;
+            text-shadow: 0 0 8px rgba(0, 255, 140, 0.35);
+        }
+
+        .soma-box .soma-limpar {
+            font-size: 12px;
+            color: rgba(205, 247, 226, 0.6);
+            text-decoration: underline;
+        }
+
+        .input-group {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #9fe8c4;
+            font-size: 14px;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid rgba(0, 255, 140, 0.3);
+            border-radius: 10px;
+            font-size: 18px;
+            background: rgba(0, 0, 0, 0.35);
+            color: #f0fff8;
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        input[type="number"]::placeholder {
+            color: rgba(240, 255, 248, 0.35);
+        }
+
+        input[type="number"]:focus {
+            border-color: #00ff8c;
+            box-shadow: 0 0 0 3px rgba(0, 255, 140, 0.15);
+        }
+
+        .results {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 15px;
+            cursor: pointer;
+            transition: background 0.2s ease, border-color 0.2s ease;
+        }
+
+        .result-item:hover {
+            background: rgba(0, 255, 140, 0.06);
+        }
+
+        .modalidade {
+            color: #d7f5e6;
+            font-weight: 600;
+        }
+
+        .valor {
+            color: #00ff8c;
+            font-weight: bold;
+            text-shadow: 0 0 8px rgba(0, 255, 140, 0.35);
+        }
+    </style>
+</head>
+<body>
+
+<div class="card card-topo">
+    <h2>Calculadora de Recebimento</h2>
+    
+    <div class="soma-box" id="somaBox" onclick="limparSoma()">
+        <span>Soma selecionados: <span class="soma-valor" id="somaValor">R$ 0,00</span></span>
+        <span class="soma-limpar">limpar</span>
+    </div>
+
+    <div class="input-group">
+        <label for="valorBase">Digite o Valor (R$):</label>
+        <input type="number" id="valorBase" placeholder="Ex: 100.00" step="0.01" oninput="calcular()">
+    </div>
+</div>
+
+<div class="card card-resultados">
+    <div class="results" id="listaResultados"></div>
+</div>
+
+<script>
+    const taxas = [
+        { nome: "Débito", taxa: 0.9801 },
+        { nome: "Crédito", taxa: 0.9601 },
+        { nome: "2x", taxa: 0.9401 },
+        { nome: "3x", taxa: 0.9321 },
+        { nome: "4x", taxa: 0.9251 },
+        { nome: "5x", taxa: 0.9191 },
+        { nome: "6x", taxa: 0.9101 },
+        { nome: "7x", taxa: 0.9001 },
+        { nome: "8x", taxa: 0.8921 },
+        { nome: "9x", taxa: 0.8851 },
+        { nome: "10x", taxa: 0.8801 },
+        { nome: "11x", taxa: 0.8651 },
+        { nome: "12x", taxa: 0.8601 }
+    ];
+
+    let somaAcumulada = 0;
+    let audioCtx = null;
+    let audioSuportado = !!(window.AudioContext || window.webkitAudioContext);
+
+    function tocarTom(freqInicial, freqFinal, duracao, tipoOnda, volume) {
+        if (!audioSuportado) return;
+        try {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = tipoOnda || 'sine';
+            osc.frequency.setValueAtTime(freqInicial, audioCtx.currentTime);
+            if (freqFinal && freqFinal !== freqInicial) {
+                osc.frequency.exponentialRampToValueAtTime(freqFinal, audioCtx.currentTime + duracao);
+            }
+
+            gain.gain.setValueAtTime(volume || 0.15, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duracao);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start(audioCtx.currentTime);
+            osc.stop(audioCtx.currentTime + duracao);
+        } catch (e) {
+            audioSuportado = false;
+        }
+    }
+
+    function somSelecionar() {
+        tocarTom(700, 1100, 0.12, 'sine', 0.15);
+    }
+
+    function somLimpar() {
+        tocarTom(500, 200, 0.25, 'triangle', 0.15);
+    }
+
+    function atualizarSoma() {
+        document.getElementById('somaValor').textContent =
+            "R$ " + somaAcumulada.toFixed(2).replace('.', ',');
+    }
+
+    function limparSoma() {
+        somaAcumulada = 0;
+        atualizarSoma();
+        somLimpar();
+    }
+
+    function selecionarItem(valorItem) {
+        somaAcumulada += valorItem;
+        if (somaAcumulada < 0.005) somaAcumulada = 0;
+        atualizarSoma();
+
+        const inputEl = document.getElementById('valorBase');
+        inputEl.value = "";
+        calcular(); 
+        inputEl.focus();
+
+        somSelecionar();
+    }
+
+    function calcular() {
+        const inputValor = document.getElementById('valorBase').value;
+        const containerResultados = document.getElementById('listaResultados');
+        
+        containerResultados.innerHTML = "";
+
+        const valor = parseFloat(inputValor);
+        const valorEfetivo = (isNaN(valor) || valor < 0) ? 0 : valor;
+
+        taxas.forEach(item => {
+            const resultadoCalculado = valorEfetivo * item.taxa;
+            
+            const div = document.createElement('div');
+            div.className = 'result-item';
+            div.innerHTML = `
+                <span class="modalidade">${item.nome}:</span>
+                <span class="valor">R$ ${resultadoCalculado.toFixed(2).replace('.', ',')}</span>
+            `;
+            div.addEventListener('click', () => selecionarItem(resultadoCalculado));
+            containerResultados.appendChild(div);
+        });
+    }
+
+    calcular();
+</script>
+
+</body>
+</html>
